@@ -61,7 +61,6 @@
 </template>
 
 <script>
-import axios from "axios";
 import { userLogin, userRegister } from "@/uitls";
 import { Message } from "element-ui";
 export default {
@@ -97,7 +96,11 @@ export default {
           // 处理登录逻辑
           userLogin(this.loginForm.username, this.loginForm.password).finally(
             () => {
-              this.$router.push("/home");
+              if (this.loginForm.username === "admin") {
+                this.$router.push("/manage");
+              } else {
+                this.$router.push("/home");
+              }
             }
           );
         } else {

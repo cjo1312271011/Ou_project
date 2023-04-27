@@ -100,16 +100,16 @@
 </template>
 
 <script>
-import TopBar from '@/components/TopBar.vue'
-import { getRecommendList, sendEquip } from '../uitls'
-import ListItem from '@/components/ListItem.vue'
-import {Message} from "element-ui";
+import TopBar from "@/components/TopBar.vue";
+import { getRecommendList, sendEquip } from "../uitls";
+import ListItem from "@/components/ListItem.vue";
+import { Message } from "element-ui";
 export default {
-  name: 'HomeView',
+  name: "HomeView",
   components: { TopBar, ListItem },
   data() {
     return {
-      tag: '游戏',
+      tag: "游戏",
       price: 2000,
       cpuWeight: 20,
       diskWeight: 20,
@@ -117,7 +117,7 @@ export default {
       memoryWeight: 20, // 内存
       mainWeight: 20, // 主板
       config: {},
-      activeType: 'cpu',
+      activeType: "cpu",
 
       //
       cpuList: [],
@@ -125,7 +125,7 @@ export default {
       memoryList: [],
       boardList: [],
       disks: [],
-    }
+    };
   },
   methods: {
     handleClick() {
@@ -137,33 +137,33 @@ export default {
         memoryWeight: this.memoryWeight,
       })
         .then((res) => {
-          if(res.data.code !==200){
-            Message.error(res.data.msg)
-            return
+          if (res.data.code !== 200) {
+            Message.error(res.data.msg);
+            return;
           }
 
-          this.cpuList = [res.data.data.cpu]
-          this.graphicsList = [res.data.data.graphics]
-          this.disks = [res.data.data.disk]
-          this.memoryList = [res.data.data.memory]
-          this.boardList = [res.data.data.mainBoard]
+          this.cpuList = [res.data.data.cpu];
+          this.graphicsList = [res.data.data.graphics];
+          this.disks = [res.data.data.disk];
+          this.memoryList = [res.data.data.memory];
+          this.boardList = [res.data.data.mainBoard];
         })
         .catch((err) => {
-          console.log(err)
-        })
+          console.log(err);
+        });
     },
   },
 
   mounted() {
     getRecommendList().then((res) => {
-      this.cpuList = res.data.data.cpulist
-      this.graphicsList = res.data.data.graphicsList
-      this.memoryList = res.data.data.memoryList
-      this.boardList = res.data.data.boardList
-      this.disks = res.data.data.disks
-    })
+      this.cpuList = res.data.data.cpulist;
+      this.graphicsList = res.data.data.graphicsList;
+      this.memoryList = res.data.data.memoryList;
+      this.boardList = res.data.data.boardList;
+      this.disks = res.data.data.disks;
+    });
   },
-}
+};
 </script>
 
 <style scoped>
