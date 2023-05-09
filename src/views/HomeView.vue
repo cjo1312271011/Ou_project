@@ -4,13 +4,13 @@
     <div class="container">
       <div class="left-container">
         <el-form label-width="80px">
-          <el-form-item label="相关标签">
+          <!-- <el-form-item label="相关标签">
             <el-input placeholder="请输入合适的标签" v-model="tag" />
-          </el-form-item>
+          </el-form-item> -->
         </el-form>
         <el-tabs v-model="activeType" type="card">
           <el-tab-pane label="CPU" name="cpu">
-            <div v-for="(item, index) in cpuList" :key="index">
+            <div v-for="(item, index) in cpuPageInfo.list" :key="index">
               <list-item
                 :id="item.cpuId"
                 :image="item.cpuImage"
@@ -21,7 +21,7 @@
             </div>
           </el-tab-pane>
           <el-tab-pane label="硬盘" name="disk">
-            <div v-for="(item, index) in disks" :key="index">
+            <div v-for="(item, index) in diskPageInfo.list" :key="index">
               <list-item
                 :id="item.diskId"
                 :image="item.diskImage"
@@ -32,7 +32,7 @@
             </div>
           </el-tab-pane>
           <el-tab-pane label="显卡" name="graphics">
-            <div v-for="(item, index) in graphicsList" :key="index">
+            <div v-for="(item, index) in graphicsPageInfo.list" :key="index">
               <list-item
                 :id="item.graphicsId"
                 :image="item.graphicsImage"
@@ -43,7 +43,7 @@
             </div>
           </el-tab-pane>
           <el-tab-pane label="主板" name="mainBoard">
-            <div v-for="(item, index) in boardList" :key="index">
+            <div v-for="(item, index) in boardPageInfo.list" :key="index">
               <list-item
                 :id="item.boardId"
                 :image="item.boardImage"
@@ -54,7 +54,7 @@
             </div>
           </el-tab-pane>
           <el-tab-pane label="内存" name="memory">
-            <div v-for="(item, index) in memoryList" :key="index">
+            <div v-for="(item, index) in memoryPageInfo.list" :key="index">
               <list-item
                 :id="item.memoryId"
                 :image="item.memoryImage"
@@ -64,6 +64,14 @@
               ></list-item>
             </div>
           </el-tab-pane>
+          <el-pagination
+            @current-change="handleCurrentChange"
+            :current-page="page"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+          >
+          </el-pagination>
         </el-tabs>
       </div>
       <div class="right-container">
@@ -101,7 +109,7 @@
 
 <script>
 import TopBar from "@/components/TopBar.vue";
-import { getRecommendList, sendEquip } from "../uitls";
+import { sendEquip } from "../uitls";
 import ListItem from "@/components/ListItem.vue";
 import { Message } from "element-ui";
 export default {
@@ -119,49 +127,76 @@ export default {
       config: {},
       activeType: "cpu",
 
-      //
-      cpuList: [],
-      graphicsList: [],
-      memoryList: [],
-      boardList: [],
-      disks: [],
+      boardPageInfo: { list: [] },
+      cpuPageInfo: { list: [] },
+      diskPageInfo: { list: [] },
+      graphicsPageInfo: { list: [] },
+      memoryPageInfo: { list: [] },
+
+      page: 1,
+      pageSize: 10,
+      total: 0,
     };
   },
   methods: {
     handleClick() {
-      sendEquip(this.price, this.tag, {
-        cpuWeight: this.cpuWeight,
-        mainBoardWeight: this.mainWeight,
-        diskWeight: this.diskWeight,
-        graphicsWeight: this.graphicsWeight,
-        memoryWeight: this.memoryWeight,
+      this.getData();
+    },
+    getData() {
+      sendEquip( {
+        轻度游戏: this.cpuWeight,
+        家用学习: this.mainWeight,
+        经济实惠: this.diskWeight,
+        图形影像: this.graphicsWeight,
+        商务办公: this.memoryWeight,
       })
         .then((res) => {
           if (res.data.code !== 200) {
             Message.error(res.data.msg);
             return;
           }
-
-          this.cpuList = [res.data.data.cpu];
-          this.graphicsList = [res.data.data.graphics];
-          this.disks = [res.data.data.disk];
-          this.memoryList = [res.data.data.memory];
-          this.boardList = [res.data.data.mainBoard];
+          this.boardPageInfo = res.data.data.boardPageInfo;
+          this.cpuPageInfo = res.data.data.cpuPageInfo;
+          this.diskPageInfo = res.data.data.diskPageInfo;
+          this.graphicsPageInfo = res.data.data.graphicsPageInfo;
+          this.memoryPageInfo = res.data.data.memoryPageInfo;
         })
         .catch((err) => {
           console.log(err);
         });
     },
+
+    handleCurrentChange(page) {
+      this.page = page;
+      this.getData();
+    },
+  },
+  watch: {
+    activeType(now) {
+      this.page = 1;
+      this.getData();
+      switch (now) {
+        case "cpu":
+          this.total = this.cpuPageInfo.total;
+          break;
+        case "disk":
+          this.total = this.diskPageInfo.total;
+          break;
+        case "graphics":
+          this.total = this.graphicsPageInfo.total;
+          break;
+        case "mainBoard":
+          this.total = this.boardPageInfo.total;
+          break;
+        default:
+          this.total = this.memoryPageInfo.total;
+          break;
+      }
+    },
   },
 
   mounted() {
-    getRecommendList().then((res) => {
-      this.cpuList = res.data.data.cpulist;
-      this.graphicsList = res.data.data.graphicsList;
-      this.memoryList = res.data.data.memoryList;
-      this.boardList = res.data.data.boardList;
-      this.disks = res.data.data.disks;
-    });
+    this.getData();
   },
 };
 </script>

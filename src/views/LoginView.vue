@@ -94,15 +94,17 @@ export default {
       this.$refs.loginForm.validate((valid) => {
         if (valid) {
           // 处理登录逻辑
-          userLogin(this.loginForm.username, this.loginForm.password).finally(
-            () => {
-              if (this.loginForm.username === "admin") {
+          userLogin(this.loginForm.username, this.loginForm.password)
+            .then(() => {
+              if (this.loginForm.username === "root") {
                 this.$router.push("/manage");
               } else {
                 this.$router.push("/home");
               }
-            }
-          );
+            })
+            .catch(() => {
+              Message.error("登陆失败");
+            });
         } else {
           return false;
         }
@@ -112,13 +114,14 @@ export default {
       this.$refs.registerForm.validate((valid) => {
         if (valid) {
           // 处理注册逻辑
-          userRegister(
-            this.registerForm.username,
-            this.registerForm.password
-          ).finally(() => {
-            Message.success("注册成功");
-            this.register = true;
-          });
+          userRegister(this.registerForm.username, this.registerForm.password)
+            .then(() => {
+              Message.success("注册成功");
+              this.register = true;
+            })
+            .catch(() => {
+              Message.error("注册失败");
+            });
         } else {
           return false;
         }
