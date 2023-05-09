@@ -2,20 +2,24 @@
   <el-container>
     <el-aside width="200px">
       <h1></h1>
-      <el-menu default-active="2" style="text-align: center">
+      <el-menu
+        :default-active="activeType"
+        style="text-align: center"
+        @select="handleSelect"
+      >
         <el-menu-item index="0">
           <i class="el-icon-setting" /> 管理系统
         </el-menu-item>
-        <el-menu-item index="1"> 用户 </el-menu-item>
-        <el-menu-item index="2"> CPU </el-menu-item>
-        <el-menu-item index="3"> 主板 </el-menu-item>
-        <el-menu-item index="4"> 硬盘 </el-menu-item>
-        <el-menu-item index="5"> 显卡 </el-menu-item>
-        <el-menu-item index="6"> 内存 </el-menu-item>
+        <el-menu-item index="user"> 用户 </el-menu-item>
+        <el-menu-item index="cpu"> CPU </el-menu-item>
+        <el-menu-item index="board"> 主板 </el-menu-item>
+        <el-menu-item index="disk"> 硬盘 </el-menu-item>
+        <el-menu-item index="graphics"> 显卡 </el-menu-item>
+        <el-menu-item index="memory"> 内存 </el-menu-item>
       </el-menu>
     </el-aside>
 
-    <el-main>
+    <el-main v-if="!inUser">
       <el-container>
         <el-header>
           <div>
@@ -31,11 +35,7 @@
               @click="handleSearch"
               >搜索</el-button
             >
-
-            <el-button
-              type="primary"
-              icon="el-icon-upload"
-              @click="handleUpload"
+            <el-button type="primary" icon="el-icon-upload" @click="openUpload"
               >上传</el-button
             >
           </div>
@@ -46,15 +46,31 @@
             <span slot="empty"
               ><el-empty description="当前数据为空"></el-empty
             ></span>
-            <el-table-column prop="cpuId" label="id"></el-table-column>
-            <el-table-column prop="cpuName" label="名字"></el-table-column>
-            <el-table-column prop="cpuPrice" label="价格"></el-table-column>
-            <el-table-column prop="cpuImage" label="图片地址"></el-table-column>
+            <el-table-column
+              :prop="activeProps.id"
+              label="id"
+            ></el-table-column>
+            <el-table-column
+              :prop="activeProps.name"
+              label="名字"
+            ></el-table-column>
+            <el-table-column
+              :prop="activeProps.price"
+              label="价格"
+            ></el-table-column>
+            <el-table-column
+              :prop="activeProps.tag"
+              label="标签"
+            ></el-table-column>
+
+            <el-table-column
+              :prop="activeProps.image"
+              label="图片地址"
+            ></el-table-column>
 
             <el-table-column label="操作">
               <template slot-scope="scope">
-                <el-button @click="handleEdit(scope.row)">编辑</el-button>
-
+                <el-button @click="openEdit(scope.row)">编辑</el-button>
                 <el-button type="danger" @click="handleDelete(scope.row)"
                   >删除</el-button
                 >
@@ -73,38 +89,75 @@
       </el-container>
     </el-main>
 
-    <el-dialog :visible.sync="uploadVisible" :title="title">
-      <el-form :model="form" label-position="left" label-width="120px">
-        <el-form-item label="CPU ID">
-          <el-input v-model="form.cpuId"></el-input>
+    <div v-else>
+      <user-component />
+    </div>
+
+    <el-dialog :visible.sync="uploadVisible" :title="`上传 ${activeType} 数据`">
+      <el-form :model="uploadForm" label-position="left" label-width="120px">
+        <el-form-item label="ID">
+          <el-input v-model="uploadForm.id"></el-input>
         </el-form-item>
-        <el-form-item label="CPU 名称">
-          <el-input v-model="form.cpuName"></el-input>
+        <el-form-item label="名称">
+          <el-input v-model="uploadForm.name"></el-input>
         </el-form-item>
-        <el-form-item label="CPU 价格">
-          <el-input v-model="form.cpuPrice"></el-input>
+        <el-form-item label="价格">
+          <el-input v-model="uploadForm.price"></el-input>
         </el-form-item>
-        <el-form-item label="CPU 标签">
-          <el-input v-model="form.cpuTag"></el-input>
+        <el-form-item label="标签">
+          <el-input v-model="uploadForm.tag"></el-input>
         </el-form-item>
-        <el-form-item label="CPU 图片地址">
-          <el-input v-model="form.cpuImage"></el-input>
+        <el-form-item label="图片地址">
+          <el-input v-model="uploadForm.image"></el-input>
         </el-form-item>
       </el-form>
 
       <span slot="footer" class="dialog-footer">
         <el-button @click="uploadVisible = false">取 消</el-button>
-        <el-button type="primary" @click="uploadVisible = false"
-          >确 定</el-button
-        >
+        <el-button type="primary" @click="postUpload">确 定</el-button>
+      </span>
+    </el-dialog>
+
+    <el-dialog :visible.sync="editVisible" :title="`修改 ${activeType} 数据`">
+      <el-form :model="editForm" label-position="left" label-width="120px">
+        <el-form-item label="ID">
+          <el-input v-model="editForm.id"></el-input>
+        </el-form-item>
+        <el-form-item label="名称">
+          <el-input v-model="editForm.name"></el-input>
+        </el-form-item>
+        <el-form-item label="价格">
+          <el-input v-model="editForm.price"></el-input>
+        </el-form-item>
+        <el-form-item label="标签">
+          <el-input v-model="editForm.tag"></el-input>
+        </el-form-item>
+        <el-form-item label="图片地址">
+          <el-input v-model="editForm.image"></el-input>
+        </el-form-item>
+      </el-form>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="editVisible = false">取 消</el-button>
+        <el-button type="primary" @click="postEditData">确 定</el-button>
       </span>
     </el-dialog>
   </el-container>
 </template>
 
 <script>
-import { getCpuList } from "@/uitls";
+import {
+  addFittings,
+  deleteFittings,
+  fuzzyQueryFittingsList,
+  getFittingsList,
+  updateFittings,
+} from "@/uitls";
+import { cpuProps, propsMap, swapPropsMap } from "@/FittingsMap";
+import { Message } from "element-ui";
+import UserComponent from "./UserComponent.vue";
 export default {
+  components: { UserComponent },
   name: "ManageIndex",
 
   data() {
@@ -117,47 +170,135 @@ export default {
       pageSize: 10, // 每页显示的数据条数
 
       uploadVisible: false,
+      editVisible: false,
 
       title: "上传 CPU 数据",
 
-      form: {
-        cpuId: "",
-        cpuName: "",
-        cpuPrice: "",
-        cpuTag: "",
-        cpuImage: "",
+      activeProps: cpuProps,
+      activeType: "cpu",
+
+      inUser: false,
+
+      uploadForm: {
+        id: "",
+        name: "",
+        price: "",
+        tag: "",
+        image: "",
+      },
+      editForm: {
+        id: "",
+        name: "",
+        price: "",
+        tag: "",
+        image: "",
       },
     };
   },
   mounted() {
     this.getData();
   },
-
   methods: {
+    handleSelect(index) {
+      if (index === 0) return;
+      if (index == "user") {
+        this.inUser = true;
+        return;
+      }
+      this.inUser = false;
+      this.activeType = index;
+      this.activeProps = propsMap[index];
+      this.getData();
+    },
     getData() {
-      getCpuList(this.page, this.pageSize).then((res) => {
-        const data = res.data.data.cpuList;
-        this.list = data;
-        this.total = data.length;
-      });
+      getFittingsList(this.activeType, {
+        page: this.page,
+        pageSize: this.pageSize,
+      })
+        .then((res) => {
+          const data = res.data.data;
+          this.list = data.list;
+          this.total = data.total;
+        })
+        .catch(() => Message.error("获取数据失败"));
     },
     handleSearch() {
-      console.log(`你正在搜索：${this.searchValue}`);
-      // 这里可以编写其他搜索操作
+      const param = `${this.activeType}Name`;
+      fuzzyQueryFittingsList(this.activeType, {
+        [param]: this.searchValue,
+        page: this.page,
+        pageSize: this.pageSize,
+      }).then((res) => {
+        const data = res.data.data;
+        this.list = data.list;
+        this.total = data.total;
+      });
     },
-    handleUpload() {
+    openUpload() {
       //
       this.uploadVisible = true;
     },
+    postUpload() {
+      const obj = {};
+      const map = propsMap[this.activeType];
+      Object.entries(this.uploadForm).forEach(([key, val]) => {
+        obj[map[key]] = val;
+      });
 
-    handleEdit(rowData) {
-      this.title = "修改 CPU 数据";
-      this.uploadVisible = true;
-      this.form = rowData;
+      addFittings(this.activeType, {
+        ...obj,
+      })
+        .then(() => {
+          Message.success("上传成功");
+          this.getData();
+          this.uploadVisible = false;
+        })
+        .catch(() => {
+          Message.error("上传失败");
+        });
+    },
+
+    openEdit(rowData) {
+      this.editVisible = true;
+      const swapMap = swapPropsMap[this.activeType];
+      let tempObj = {};
+      Object.entries(rowData).forEach(([key, val]) => {
+        tempObj[swapMap[key]] = val;
+      });
+      this.editForm = tempObj;
+    },
+    postEditData() {
+      const obj = {};
+      const map = propsMap[this.activeType];
+      Object.entries(this.editForm).forEach(([key, val]) => {
+        obj[map[key]] = val;
+      });
+      updateFittings(this.activeType, {
+        ...obj,
+      })
+        .then(() => {
+          Message.success("更新成功");
+          this.getData();
+          this.editVisible = false;
+        })
+        .catch(() => Message.error("更新失败"));
     },
     handleDelete(rowData) {
-      const id = rowData.cpuId;
-      this.list = this.list.filter((item) => item.cpuId !== id);
+      const swapMap = swapPropsMap[this.activeType];
+      Object.entries(swapMap).forEach(([key, val]) => {
+        if (val === "id") {
+          deleteFittings(this.activeType, {
+            id: rowData[key],
+          })
+            .then(() => {
+              Message.success("删除成功");
+              this.getData();
+            })
+            .catch(() => {
+              Message.error("删除失败");
+            });
+        }
+      });
     },
     // 页码改变时触发
     handleCurrentChange(page) {
@@ -169,12 +310,12 @@ export default {
   watch: {
     uploadVisible(val, pre) {
       if (val === false) {
-        this.form = {
-          cpuId: "",
-          cpuName: "",
-          cpuPrice: "",
-          cpuTag: "",
-          cpuImage: "",
+        this.uploadForm = {
+          id: "",
+          name: "",
+          price: "",
+          tag: "",
+          image: "",
         };
       }
     },
